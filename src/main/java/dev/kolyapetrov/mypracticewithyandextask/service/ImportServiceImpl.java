@@ -22,15 +22,18 @@ public class ImportServiceImpl implements ImportService {
         this.importRepository = importRepository;
     }
 
-    @Override
-    public HashMap<String, Long> saveImportData(Import importData) {
-
+    private void validateImportData(Import importData) {
         var violations = validator.validate(importData);
         if (!violations.isEmpty()) {
             List<String> listOfErrors = new ArrayList<>();
             violations.forEach(err -> listOfErrors.add(err.getMessage()));
             throw new IncorrectDataException(listOfErrors);
         }
+    }
+
+    @Override
+    public HashMap<String, Long> saveImportData(Import importData) {
+        validateImportData(importData);
 
         importRepository.save(importData);
 

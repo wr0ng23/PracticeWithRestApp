@@ -18,6 +18,7 @@ public class Import {
     @Id
     private String id;
 
+    @Valid
     @CheckRelatives
     List<Citizen> citizens;
 }
