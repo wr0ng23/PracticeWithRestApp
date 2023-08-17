@@ -4,4 +4,5 @@ import dev.kolyapetrov.mypracticewithyandextask.entity.Import;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface ImportRepository extends MongoRepository<Import, String> {
+    Import findByImportId(Long importId);
 }

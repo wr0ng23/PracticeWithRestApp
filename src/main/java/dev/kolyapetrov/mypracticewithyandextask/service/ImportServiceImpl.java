@@ -1,5 +1,6 @@
 package dev.kolyapetrov.mypracticewithyandextask.service;
 
+import dev.kolyapetrov.mypracticewithyandextask.entity.Citizen;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Import;
 import dev.kolyapetrov.mypracticewithyandextask.exception_handling.IncorrectDataException;
 import dev.kolyapetrov.mypracticewithyandextask.repository.ImportRepository;
@@ -8,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -32,14 +32,25 @@ public class ImportServiceImpl implements ImportService {
     }
 
     @Override
-    public HashMap<String, Long> saveImportData(Import importData) {
+    public Long saveImportData(Import importData) {
         validateImportData(importData);
 
+        importData.setImportId(importRepository.count() + 1);
         importRepository.save(importData);
 
-        HashMap<String, Long> importResponse = new HashMap<>();
-        importResponse.put("import_id", importRepository.count());
+        return importData.getImportId();
+    }
 
-        return importResponse;
+    @Override
+    public Citizen editCitizen(Integer importId, Integer citizenId, Citizen eteredCitizen) {
+        return null;
+    }
+
+    @Override
+    public List<Citizen> getCitizensByImportId(Long importId) {
+        if (importId <= 0 || importRepository.count() < importId) {
+            throw new IncorrectDataException(List.of("Incorrect import_id"));
+        }
+        return importRepository.findByImportId(importId).getCitizens();
     }
 }
