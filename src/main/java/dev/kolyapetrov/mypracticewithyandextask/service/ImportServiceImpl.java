@@ -10,9 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class ImportServiceImpl implements ImportService {
@@ -33,12 +31,44 @@ public class ImportServiceImpl implements ImportService {
         validateObject(citizen, CitizenPatch.class);
     }
 
-    private void validateObject(Object object, Class<?> ... groupValidation) {
+    private void validateObject(Object object, Class<?>... groupValidation) {
         var violations = validator.validate(object, groupValidation);
         if (!violations.isEmpty()) {
             List<String> listOfErrors = new ArrayList<>();
             violations.forEach(err -> listOfErrors.add(err.getMessage()));
             throw new IncorrectDataException(listOfErrors);
+        }
+    }
+
+    private void changingRelativesOfCitizens(Citizen citizenFromDB, List<Citizen> citizens) {
+        citizenFromDB.getRelatives().forEach(
+                relative -> {
+                    Citizen citizen = citizens.stream().filter(citizen_ ->
+                                    Objects.equals(citizen_.getCitizen_id(), relative))
+                            .findFirst().orElse(null);
+                    assert citizen != null;
+                    if (!citizen.getRelatives().contains(citizenFromDB.getCitizen_id())) {
+                        citizen.getRelatives().add(citizenFromDB.getCitizen_id());
+                    }
+                }
+        );
+    }
+
+    private void importDataFromJsonCitizenToDbCitizen(Citizen citizenFromDB, Citizen enteredCitizen) {
+        Field[] fields = enteredCitizen.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            field.setAccessible(true);
+            try {
+                if (field.get(enteredCitizen) != null) {
+                    Field field1 = citizenFromDB
+                            .getClass()
+                            .getDeclaredField(field.getName());
+                    field1.setAccessible(true);
+                    field1.set(citizenFromDB, field.get(enteredCitizen));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -60,6 +90,7 @@ public class ImportServiceImpl implements ImportService {
         if (myImport == null) {
             throw new IncorrectDataException(List.of("Incorrect import_id"));
         }
+
         List<Citizen> citizens = myImport.getCitizens();
         var optionalObj = citizens.stream().filter(citizen ->
                 Objects.equals(citizen.getCitizen_id(), citizenId)).findFirst();
@@ -68,24 +99,20 @@ public class ImportServiceImpl implements ImportService {
         if (optionalObj.isPresent()) {
             citizenFromDB = optionalObj.get();
         } else {
-            throw new IncorrectDataException(List.of("Incorrect citizen_id"));
+            throw new IncorrectDataException("Incorrect citizen_id");
         }
 
-        Field[] fields = enteredCitizen.getClass().getDeclaredFields();
-        for (Field field : fields) {
-            field.setAccessible(true);
-            try {
-                if (field.get(enteredCitizen) != null) {
-                    Field field1 = citizenFromDB
-                            .getClass()
-                            .getDeclaredField(field.getName());
-                    field1.setAccessible(true);
-                    field1.set(citizenFromDB, field.get(enteredCitizen));
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        Set<Long> relativesIds = new HashSet<>(enteredCitizen.getRelatives());
+        if (relativesIds.size() != enteredCitizen.getRelatives().size()) {
+            throw new IncorrectDataException("Relatives ids must be unique");
         }
+        if (enteredCitizen.getRelatives().contains(enteredCitizen.getCitizen_id())) {
+            throw new IncorrectDataException("Relatives ids must be unique");
+        }
+
+        importDataFromJsonCitizenToDbCitizen(citizenFromDB, enteredCitizen);
+
+        changingRelativesOfCitizens(citizenFromDB, citizens);
 
         importRepository.save(myImport);
 
@@ -95,7 +122,7 @@ public class ImportServiceImpl implements ImportService {
     @Override
     public List<Citizen> getCitizensByImportId(Long importId) {
         if (importId <= 0 || importRepository.count() < importId) {
-            throw new IncorrectDataException(List.of("Incorrect import_id"));
+            throw new IncorrectDataException("Incorrect import_id");
         }
         return importRepository.findByImportId(importId).getCitizens();
     }
