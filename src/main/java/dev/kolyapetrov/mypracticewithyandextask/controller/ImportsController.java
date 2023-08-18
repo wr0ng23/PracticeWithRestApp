@@ -4,6 +4,7 @@ import dev.kolyapetrov.mypracticewithyandextask.entity.Citizen;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Import;
 import dev.kolyapetrov.mypracticewithyandextask.service.ImportService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,8 +23,7 @@ public class ImportsController {
     }
 
     @PostMapping
-    public ResponseEntity<HashMap<String, Long>> getImports(
-            @RequestBody Import importOfCitizens) {
+    public ResponseEntity<HashMap<String, Long>> getImports(@RequestBody Import importOfCitizens) {
 
         Long importId = importService.saveImportData(importOfCitizens);
 
@@ -35,6 +35,7 @@ public class ImportsController {
 
     @GetMapping("/{import_id}/citizens")
     public HashMap<String, List<Citizen>> getAllCitizens(@PathVariable Long import_id) {
+
         HashMap<String, List<Citizen>> response = new HashMap<>();
         response.put("data", importService.getCitizensByImportId(import_id));
 
@@ -46,7 +47,9 @@ public class ImportsController {
                                                @PathVariable Long import_id,
                                                @RequestBody Citizen citizen) {
 
-        return null;
+        Citizen pathcedCitizen = importService.editCitizen(import_id, citizen_id, citizen);
+
+        return new ResponseEntity<>(pathcedCitizen, HttpStatus.ACCEPTED);
     }
 }
 
