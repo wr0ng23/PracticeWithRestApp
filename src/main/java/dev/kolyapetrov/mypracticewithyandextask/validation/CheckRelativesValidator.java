@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ValidationOfRelatives
+public class CheckRelativesValidator
         implements ConstraintValidator<CheckRelatives, List<Citizen>> {
 
     private List<Citizen> citizens;

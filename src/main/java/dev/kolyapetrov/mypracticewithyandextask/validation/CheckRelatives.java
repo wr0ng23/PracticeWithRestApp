@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ValidationOfRelatives.class)
+@Constraint(validatedBy = CheckRelativesValidator.class)
 public @interface CheckRelatives {
     String message() default "";
 

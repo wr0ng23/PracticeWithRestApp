@@ -4,7 +4,7 @@ import dev.kolyapetrov.mypracticewithyandextask.entity.Citizen;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Import;
 import dev.kolyapetrov.mypracticewithyandextask.exception_handling.IncorrectDataException;
 import dev.kolyapetrov.mypracticewithyandextask.repository.ImportRepository;
-import dev.kolyapetrov.mypracticewithyandextask.validation.CitizenPatch;
+import dev.kolyapetrov.mypracticewithyandextask.validation.group_of_validation.CitizenPatch;
 import jakarta.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,8 +27,11 @@ public class ImportServiceImpl implements ImportService {
         validateObject(importData);
     }
 
-    private void validateCitizen(Citizen citizen) {
+    private void validateCitizen(Citizen citizen, Long citizenId, List<Citizen> citizens) {
         validateObject(citizen, CitizenPatch.class);
+        citizen.setCitizen_id(citizenId);
+
+        validateRelatives(citizen, citizens);
     }
 
     private void validateObject(Object object, Class<?>... groupValidation) {
@@ -41,6 +44,13 @@ public class ImportServiceImpl implements ImportService {
     }
 
     private void changingRelativesOfCitizens(Citizen citizenFromDB, List<Citizen> citizens) {
+        if (citizenFromDB.getRelatives().isEmpty()) {
+            citizens.forEach(citizen ->
+                        citizen.getRelatives().remove(citizenFromDB.getCitizen_id())
+            );
+            return;
+        }
+
         citizenFromDB.getRelatives().forEach(
                 relative -> {
                     Citizen citizen = citizens.stream().filter(citizen_ ->
@@ -102,7 +112,7 @@ public class ImportServiceImpl implements ImportService {
     public Citizen editCitizen(Long importId, Long citizenId, Citizen enteredCitizen) {
         Import myImport = importRepository.findByImportId(importId);
         if (myImport == null) {
-            throw new IncorrectDataException(List.of("Incorrect import_id"));
+            throw new IncorrectDataException("Incorrect import_id");
         }
 
         List<Citizen> citizens = myImport.getCitizens();
@@ -116,10 +126,7 @@ public class ImportServiceImpl implements ImportService {
             throw new IncorrectDataException("Incorrect citizen_id");
         }
 
-        validateCitizen(enteredCitizen);
-        enteredCitizen.setCitizen_id(citizenId);
-
-        validateRelatives(enteredCitizen, citizens);
+        validateCitizen(enteredCitizen, citizenId, citizens);
 
         importDataFromJsonCitizenToDbCitizen(citizenFromDB, enteredCitizen);
 

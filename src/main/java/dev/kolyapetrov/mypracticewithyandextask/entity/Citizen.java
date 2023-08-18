@@ -3,7 +3,7 @@ package dev.kolyapetrov.mypracticewithyandextask.entity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import dev.kolyapetrov.mypracticewithyandextask.validation.AtLeastOneNotNull;
-import dev.kolyapetrov.mypracticewithyandextask.validation.CitizenPatch;
+import dev.kolyapetrov.mypracticewithyandextask.validation.group_of_validation.CitizenPatch;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
