@@ -15,7 +15,7 @@ public class ValidationOfRelatives
 
     private List<Citizen> citizens;
     private ConstraintValidatorContext context;
-    private HashMap<Integer, Set<Integer>> dictionaryOfRelatives;
+    private HashMap<Long, Set<Long>> dictionaryOfRelatives;
 
     @Override
     public boolean isValid(List<Citizen> citizens,
@@ -23,7 +23,7 @@ public class ValidationOfRelatives
         context.disableDefaultConstraintViolation();
 
         // Dictionary of citizen_id and his relatives
-        HashMap<Integer, Set<Integer>> dictionaryOfRelatives = new HashMap<>();
+        HashMap<Long, Set<Long>> dictionaryOfRelatives = new HashMap<>();
         citizens.forEach(citizen -> dictionaryOfRelatives
                 .put(citizen.getCitizen_id(), new HashSet<>(citizen.getRelatives()))
         );
@@ -39,13 +39,8 @@ public class ValidationOfRelatives
                 validateForDuplexRelatives();
     }
 
-    @Override
-    public void initialize(CheckRelatives checkRelatives) {
-
-    }
-
     private boolean validateForUniqueCitizenIds() {
-        Set<Integer> citizensIds = citizens.stream()
+        Set<Long> citizensIds = citizens.stream()
                 .map(Citizen::getCitizen_id)
                 .collect(Collectors.toSet());
 
