@@ -4,12 +4,15 @@ import dev.kolyapetrov.mypracticewithyandextask.entity.Citizen;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Import;
 import dev.kolyapetrov.mypracticewithyandextask.exception_handling.IncorrectDataException;
 import dev.kolyapetrov.mypracticewithyandextask.repository.ImportRepository;
+import dev.kolyapetrov.mypracticewithyandextask.validation.CitizenPatch;
 import jakarta.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ImportServiceImpl implements ImportService {
@@ -23,7 +26,15 @@ public class ImportServiceImpl implements ImportService {
     }
 
     private void validateImportData(Import importData) {
-        var violations = validator.validate(importData);
+        validateObject(importData);
+    }
+
+    private void validateCitizen(Citizen citizen) {
+        validateObject(citizen, CitizenPatch.class);
+    }
+
+    private void validateObject(Object object, Class<?> ... groupValidation) {
+        var violations = validator.validate(object, groupValidation);
         if (!violations.isEmpty()) {
             List<String> listOfErrors = new ArrayList<>();
             violations.forEach(err -> listOfErrors.add(err.getMessage()));
@@ -42,8 +53,43 @@ public class ImportServiceImpl implements ImportService {
     }
 
     @Override
-    public Citizen editCitizen(Integer importId, Integer citizenId, Citizen eteredCitizen) {
-        return null;
+    public Citizen editCitizen(Long importId, Long citizenId, Citizen enteredCitizen) {
+        validateCitizen(enteredCitizen);
+
+        Import myImport = importRepository.findByImportId(importId);
+        if (myImport == null) {
+            throw new IncorrectDataException(List.of("Incorrect import_id"));
+        }
+        List<Citizen> citizens = myImport.getCitizens();
+        var optionalObj = citizens.stream().filter(citizen ->
+                Objects.equals(citizen.getCitizen_id(), citizenId)).findFirst();
+
+        Citizen citizenFromDB;
+        if (optionalObj.isPresent()) {
+            citizenFromDB = optionalObj.get();
+        } else {
+            throw new IncorrectDataException(List.of("Incorrect citizen_id"));
+        }
+
+        Field[] fields = enteredCitizen.getClass().getDeclaredFields();
+        for (Field field : fields) {
+            field.setAccessible(true);
+            try {
+                if (field.get(enteredCitizen) != null) {
+                    Field field1 = citizenFromDB
+                            .getClass()
+                            .getDeclaredField(field.getName());
+                    field1.setAccessible(true);
+                    field1.set(citizenFromDB, field.get(enteredCitizen));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        importRepository.save(myImport);
+
+        return citizenFromDB;
     }
 
     @Override
