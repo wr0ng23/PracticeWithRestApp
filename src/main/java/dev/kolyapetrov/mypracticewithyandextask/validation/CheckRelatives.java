@@ -12,7 +12,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = ValidationOfRelatives.class)
 public @interface CheckRelatives {
-    String value() default "";
     String message() default "";
 
     Class<?>[] groups() default {};
