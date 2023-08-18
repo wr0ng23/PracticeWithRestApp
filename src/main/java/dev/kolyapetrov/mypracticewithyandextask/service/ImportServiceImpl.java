@@ -72,6 +72,22 @@ public class ImportServiceImpl implements ImportService {
         }
     }
 
+    private void validateRelatives(Citizen enteredCitizen, List<Citizen> citizens) {
+        Set<Long> relativesIds = new HashSet<>(enteredCitizen.getRelatives());
+        if (relativesIds.size() != enteredCitizen.getRelatives().size()) {
+            throw new IncorrectDataException("Relatives ids must be unique");
+        }
+        if (enteredCitizen.getRelatives().contains(enteredCitizen.getCitizen_id())) {
+            throw new IncorrectDataException("Citizen can not be relative to himself");
+        }
+
+        List<Long> citizenIds = citizens.stream().map(Citizen::getCitizen_id).toList();
+        boolean isCorrectRelativeIds = new HashSet<>(citizenIds).containsAll(relativesIds);
+        if (!isCorrectRelativeIds) {
+            throw new IncorrectDataException("Incorrect relative id");
+        }
+    }
+
     @Override
     public Long saveImportData(Import importData) {
         validateImportData(importData);
@@ -84,8 +100,6 @@ public class ImportServiceImpl implements ImportService {
 
     @Override
     public Citizen editCitizen(Long importId, Long citizenId, Citizen enteredCitizen) {
-        validateCitizen(enteredCitizen);
-
         Import myImport = importRepository.findByImportId(importId);
         if (myImport == null) {
             throw new IncorrectDataException(List.of("Incorrect import_id"));
@@ -102,13 +116,10 @@ public class ImportServiceImpl implements ImportService {
             throw new IncorrectDataException("Incorrect citizen_id");
         }
 
-        Set<Long> relativesIds = new HashSet<>(enteredCitizen.getRelatives());
-        if (relativesIds.size() != enteredCitizen.getRelatives().size()) {
-            throw new IncorrectDataException("Relatives ids must be unique");
-        }
-        if (enteredCitizen.getRelatives().contains(enteredCitizen.getCitizen_id())) {
-            throw new IncorrectDataException("Relatives ids must be unique");
-        }
+        validateCitizen(enteredCitizen);
+        enteredCitizen.setCitizen_id(citizenId);
+
+        validateRelatives(enteredCitizen, citizens);
 
         importDataFromJsonCitizenToDbCitizen(citizenFromDB, enteredCitizen);
 
