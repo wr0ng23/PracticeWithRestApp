@@ -1,5 +1,6 @@
 package dev.kolyapetrov.mypracticewithyandextask.service;
 
+import dev.kolyapetrov.mypracticewithyandextask.dto.CitizenPresents;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Citizen;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Import;
 import dev.kolyapetrov.mypracticewithyandextask.exception_handling.IncorrectDataException;
@@ -46,7 +47,7 @@ public class ImportServiceImpl implements ImportService {
     private void changingRelativesOfCitizens(Citizen citizenFromDB, List<Citizen> citizens) {
         if (citizenFromDB.getRelatives().isEmpty()) {
             citizens.forEach(citizen ->
-                        citizen.getRelatives().remove(citizenFromDB.getCitizen_id())
+                    citizen.getRelatives().remove(citizenFromDB.getCitizen_id())
             );
             return;
         }
@@ -143,5 +144,38 @@ public class ImportServiceImpl implements ImportService {
             throw new IncorrectDataException("Incorrect import_id");
         }
         return importRepository.findByImportId(importId).getCitizens();
+    }
+
+    public HashMap<Long, List<CitizenPresents>> getBirthdays(Long importId) {
+        HashMap<Long, List<CitizenPresents>> birthdays = new HashMap<>();
+        for (long i = 1; i <= 12; ++i) {
+            birthdays.put(i, new ArrayList<>());
+        }
+
+        var citizens = importRepository.findByImportId(importId).getCitizens();
+        HashMap<Long, Integer> citizenIdAndMonthOfBirth = new HashMap<>();
+        citizens.forEach(citizen ->
+                    citizenIdAndMonthOfBirth
+                            .put(citizen.getCitizen_id(), citizen.getBirthDate().getMonthValue())
+
+        );
+
+        for (long i = 1; i <= 12; ++i) {
+            for (var citizen : citizens) {
+                var citizenPresents = new CitizenPresents();
+                citizenPresents.setCitizenId(citizen.getCitizen_id());
+                long j = 0;
+                for (var relative : citizen.getRelatives()) {
+                    if (citizenIdAndMonthOfBirth.get(relative) == i) {
+                        citizenPresents.setPresents(++j);
+                    }
+                }
+                if (citizenPresents.getPresents() != 0) {
+                    birthdays.get(i).add(citizenPresents);
+                }
+            }
+        }
+
+        return birthdays;
     }
 }

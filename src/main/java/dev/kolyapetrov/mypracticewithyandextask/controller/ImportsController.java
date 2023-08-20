@@ -1,5 +1,6 @@
 package dev.kolyapetrov.mypracticewithyandextask.controller;
 
+import dev.kolyapetrov.mypracticewithyandextask.dto.CitizenPresents;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Citizen;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Import;
 import dev.kolyapetrov.mypracticewithyandextask.service.ImportService;
@@ -34,12 +35,8 @@ public class ImportsController {
     }
 
     @GetMapping("/{import_id}/citizens")
-    public HashMap<String, List<Citizen>> getAllCitizens(@PathVariable Long import_id) {
-
-        HashMap<String, List<Citizen>> response = new HashMap<>();
-        response.put("data", importService.getCitizensByImportId(import_id));
-
-        return response;
+    public List<Citizen> getAllCitizens(@PathVariable Long import_id) {
+        return importService.getCitizensByImportId(import_id);
     }
 
     @PatchMapping("/{import_id}/citizens/{citizen_id}")
@@ -50,6 +47,13 @@ public class ImportsController {
         Citizen pathcedCitizen = importService.editCitizen(import_id, citizen_id, citizen);
 
         return new ResponseEntity<>(pathcedCitizen, HttpStatus.ACCEPTED);
+    }
+
+    @GetMapping("/{import_id}/citizens/birthdays")
+    public HashMap<Long, List<CitizenPresents>> getBirthMonthsAndPresents(
+            @PathVariable Long import_id) {
+
+        return importService.getBirthdays(import_id);
     }
 }
 
