@@ -1,6 +1,7 @@
 package dev.kolyapetrov.mypracticewithyandextask.service;
 
 import dev.kolyapetrov.mypracticewithyandextask.dto.CitizenPresents;
+import dev.kolyapetrov.mypracticewithyandextask.dto.PercentilesByTown;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Citizen;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Import;
 
@@ -13,4 +14,6 @@ public interface ImportService {
 
     List<Citizen> getCitizensByImportId(Long importId);
     HashMap<Long, List<CitizenPresents>> getBirthdays(Long importId);
+
+    List<PercentilesByTown> getListOfTownsForPercentiles(Long importId);
 }

@@ -11,5 +11,6 @@ import java.util.List;
 @NoArgsConstructor
 public class IncorrectImportInfo {
     private int statusCode;
+
     private List<String> info;
 }

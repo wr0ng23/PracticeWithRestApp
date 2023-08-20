@@ -1,6 +1,7 @@
 package dev.kolyapetrov.mypracticewithyandextask.service;
 
 import dev.kolyapetrov.mypracticewithyandextask.dto.CitizenPresents;
+import dev.kolyapetrov.mypracticewithyandextask.dto.PercentilesByTown;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Citizen;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Import;
 import dev.kolyapetrov.mypracticewithyandextask.exception_handling.IncorrectDataException;
@@ -11,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
@@ -84,6 +87,8 @@ public class ImportServiceImpl implements ImportService {
     }
 
     private void validateRelatives(Citizen enteredCitizen, List<Citizen> citizens) {
+        if (enteredCitizen.getRelatives() == null) return;
+
         Set<Long> relativesIds = new HashSet<>(enteredCitizen.getRelatives());
         if (relativesIds.size() != enteredCitizen.getRelatives().size()) {
             throw new IncorrectDataException("Relatives ids must be unique");
@@ -147,20 +152,18 @@ public class ImportServiceImpl implements ImportService {
     }
 
     public HashMap<Long, List<CitizenPresents>> getBirthdays(Long importId) {
-        HashMap<Long, List<CitizenPresents>> birthdays = new HashMap<>();
-        for (long i = 1; i <= 12; ++i) {
-            birthdays.put(i, new ArrayList<>());
-        }
-
-        var citizens = importRepository.findByImportId(importId).getCitizens();
+        var citizens = this.getCitizensByImportId(importId);
         HashMap<Long, Integer> citizenIdAndMonthOfBirth = new HashMap<>();
         citizens.forEach(citizen ->
-                    citizenIdAndMonthOfBirth
-                            .put(citizen.getCitizen_id(), citizen.getBirthDate().getMonthValue())
+                citizenIdAndMonthOfBirth
+                        .put(citizen.getCitizen_id(), citizen.getBirthDate().getMonthValue())
 
         );
 
+        HashMap<Long, List<CitizenPresents>> birthdays = new HashMap<>();
         for (long i = 1; i <= 12; ++i) {
+            birthdays.put(i, new ArrayList<>());
+
             for (var citizen : citizens) {
                 var citizenPresents = new CitizenPresents();
                 citizenPresents.setCitizenId(citizen.getCitizen_id());
@@ -178,4 +181,57 @@ public class ImportServiceImpl implements ImportService {
 
         return birthdays;
     }
+
+    public List<PercentilesByTown> getListOfTownsForPercentiles(Long importId) {
+        var citizens = this.getCitizensByImportId(importId);
+
+        Set<String> towns = new HashSet<>();
+        citizens.forEach(citizen -> towns.add(citizen.getTown()));
+
+        HashMap<String, List<Citizen>> townsAndCitizens = new HashMap<>();
+        towns.forEach(town -> {
+                    var citizensForTown = citizens.stream().filter(citizen ->
+                            citizen.getTown().equals(town)).toList();
+                    townsAndCitizens.put(town, citizensForTown);
+                }
+        );
+
+        List<PercentilesByTown> listOfPercentilesForTowns = new ArrayList<>();
+        townsAndCitizens.forEach((town, citizens_) -> {
+                    List<Integer> ages = new ArrayList<>();
+                    citizens_.forEach(citizen -> {
+                                long yearsOld = ChronoUnit.YEARS.between(citizen.getBirthDate(), LocalDate.now());
+                                ages.add((int) yearsOld);
+                            }
+                    );
+                    ages.sort(Integer::compareTo);
+
+                    PercentilesByTown percentilesByTown = getPercentilesByTown(town, ages);
+                    listOfPercentilesForTowns.add(percentilesByTown);
+                }
+        );
+
+        return listOfPercentilesForTowns;
+    }
+
+    private PercentilesByTown getPercentilesByTown(String town, List<Integer> ages) {
+        int p50Index = (int) Math.round(ages.size() * 0.50) - 1;
+        var p50 = ages.get(p50Index);
+
+        int p75Index = (int) Math.round(ages.size() * 0.75) - 1;
+        var p75 = ages.get(p75Index);
+
+        int p99Index = (int) Math.round(ages.size() * 0.99) - 1;
+        var p99 = ages.get(p99Index);
+
+        PercentilesByTown percentilesByTown = new PercentilesByTown();
+
+        percentilesByTown.setTown(town);
+        percentilesByTown.setP50(p50);
+        percentilesByTown.setP75(p75);
+        percentilesByTown.setP99(p99);
+
+        return percentilesByTown;
+    }
 }
+

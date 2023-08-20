@@ -1,6 +1,7 @@
 package dev.kolyapetrov.mypracticewithyandextask.controller;
 
 import dev.kolyapetrov.mypracticewithyandextask.dto.CitizenPresents;
+import dev.kolyapetrov.mypracticewithyandextask.dto.PercentilesByTown;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Citizen;
 import dev.kolyapetrov.mypracticewithyandextask.entity.Import;
 import dev.kolyapetrov.mypracticewithyandextask.service.ImportService;
@@ -35,25 +36,32 @@ public class ImportsController {
     }
 
     @GetMapping("/{import_id}/citizens")
-    public List<Citizen> getAllCitizens(@PathVariable Long import_id) {
+    public List<Citizen> getAllCitizens(@PathVariable(name = "import_id") Long import_id) {
         return importService.getCitizensByImportId(import_id);
     }
 
     @PatchMapping("/{import_id}/citizens/{citizen_id}")
-    public ResponseEntity<Citizen> editCitizen(@PathVariable Long citizen_id,
-                                               @PathVariable Long import_id,
+    public ResponseEntity<Citizen> editCitizen(@PathVariable(name = "citizen_id") Long citizenId,
+                                               @PathVariable(name = "import_id") Long importId,
                                                @RequestBody Citizen citizen) {
 
-        Citizen pathcedCitizen = importService.editCitizen(import_id, citizen_id, citizen);
+        Citizen pathcedCitizen = importService.editCitizen(importId, citizenId, citizen);
 
         return new ResponseEntity<>(pathcedCitizen, HttpStatus.ACCEPTED);
     }
 
     @GetMapping("/{import_id}/citizens/birthdays")
     public HashMap<Long, List<CitizenPresents>> getBirthMonthsAndPresents(
-            @PathVariable Long import_id) {
+            @PathVariable(name = "import_id") Long importId) {
 
-        return importService.getBirthdays(import_id);
+        return importService.getBirthdays(importId);
+    }
+
+    @GetMapping("/{import_id}/towns/stat/percentile/age")
+    public List<PercentilesByTown> getPercentileForTowns(
+            @PathVariable(name = "import_id") Long importId) {
+
+        return importService.getListOfTownsForPercentiles(importId);
     }
 }
 
